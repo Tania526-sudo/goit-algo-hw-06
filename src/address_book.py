@@ -6,16 +6,16 @@ from typing import List, Optional
 
 
 class Field:
-    """Базове поле запису. Зберігає значення у .value з можливістю перевизначення валідації."""
+    """Base field class. Stores the value in .value with optional validation override."""
 
     def __init__(self, value):
         self._value = None
-        self.value = value  # використовує setter
+        self.value = value  # uses the setter
 
     def __str__(self) -> str:
         return str(self.value)
 
-    # даємо нащадкам можливість перевизначати валідацію
+    # Allow descendants to override validation
     @property
     def value(self):
         return self._value
@@ -26,7 +26,7 @@ class Field:
 
 
 class Name(Field):
-    """Обов'язкове поле — ім'я контакту."""
+    """Required field – contact name."""
 
     @Field.value.setter  # type: ignore[misc]
     def value(self, new_value: str):
@@ -36,7 +36,7 @@ class Name(Field):
 
 
 class Phone(Field):
-    """Поле з валідацією: рівно 10 цифр."""
+    """Field with validation: exactly 10 digits."""
 
     _PATTERN = re.compile(r"^\d{10}$")
 
@@ -53,22 +53,22 @@ class Phone(Field):
 
 
 class Record:
-    """Запис контакту: ім'я (Name) + набір телефонів (список Phone)."""
+    """Contact record: name (Name) + a list of phones (Phone objects)."""
 
     def __init__(self, name: str):
         self.name = Name(name)
         self.phones: List[Phone] = []
 
-    # --- Вимоги по функціоналу ---
+    # --- Required functionality ---
 
     def add_phone(self, phone: str) -> Phone:
-        """Додати телефон (з валідацією). Повертає створений об'єкт Phone."""
+        """Add a phone (with validation). Returns the created Phone object."""
         p = Phone(phone)
         self.phones.append(p)
         return p
 
     def remove_phone(self, phone: str) -> bool:
-        """Видалити телефон. Повертає True, якщо знайдено і видалено, інакше False."""
+        """Remove a phone. Returns True if found and removed, otherwise False."""
         target = self.find_phone(phone)
         if target:
             self.phones.remove(target)
@@ -77,16 +77,16 @@ class Record:
 
     def edit_phone(self, old_phone: str, new_phone: str) -> None:
         """
-        Замінити існуючий телефон на новий.
-        Кидає ValueError, якщо старого номера не знайдено або новий невалідний.
+        Replace an existing phone with a new one.
+        Raises ValueError if the old number is not found or the new one is invalid.
         """
         target = self.find_phone(old_phone)
         if not target:
             raise ValueError("Old phone number not found.")
-        target.value = new_phone  # валідація відпрацює у setter Phone.value
+        target.value = new_phone  # validation is handled in the Phone.value setter
 
     def find_phone(self, phone: str) -> Optional[Phone]:
-        """Знайти телефон у записі. Повертає Phone або None."""
+        """Find a phone in the record. Returns Phone or None."""
         for p in self.phones:
             if p.value == phone:
                 return p
@@ -99,9 +99,9 @@ class Record:
 
 class AddressBook(UserDict):
     """
-    Адресна книга. Зберігає записи Record у self.data як:
-      ключ   -> record.name.value
-      значення -> Record
+    Address book. Stores Record objects in self.data as:
+      key     -> record.name.value
+      value   -> Record
     """
 
     def add_record(self, record: Record) -> None:
@@ -111,7 +111,7 @@ class AddressBook(UserDict):
         return self.data.get(name)
 
     def delete(self, name: str) -> bool:
-        """Видаляє запис за ім'ям. Повертає True, якщо існував і був видалений."""
+        """Deletes a record by name. Returns True if it existed and was removed."""
         return self.data.pop(name, None) is not None
 
     def __str__(self) -> str:
@@ -120,3 +120,4 @@ class AddressBook(UserDict):
         
         lines = [str(self.data[key]) for key in sorted(self.data.keys())]
         return "\n".join(lines)
+
